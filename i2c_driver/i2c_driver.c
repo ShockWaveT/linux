@@ -7,29 +7,47 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Your Name");
-MODULE_DESCRIPTION("A simple hello world kernel module.");
+MODULE_DESCRIPTION("A simple i2c kernel module.");
 MODULE_VERSION("1.0");
 
 
-#define DEVICE_NAME "my_i2c_device"
-#define CLASS_NAME  "my_i2c_device_class"
+#define DEVICE_NAME         "my_i2c_device"
+#define CLASS_NAME          "my_i2c_device_class"
+#define IOCTL_PRINT_MESSAGE _IO('a', 1)
 
 static int major;
 static struct class *my_class = NULL;
 static struct device *my_device = NULL;
 
-static int dev_open(struct inode *inodep, struct file *filep) {
+static int dev_open(struct inode *inodep, struct file *filep) 
+{
     printk(KERN_INFO "my_device: Device opened\n");
     return 0;
 }
 
-static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset) {
+static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset)
+{
     printk(KERN_INFO "my_device: Device file read\n");
     return 0;  // We return 0 bytes read to simulate end-of-file (EOF)
 }
 
-static int dev_release(struct inode *inodep, struct file *filep) {
+static int dev_release(struct inode *inodep, struct file *filep) 
+{
     printk(KERN_INFO "my_device: Device closed\n");
+    return 0;
+}
+
+// This function is called when an ioctl command is issued
+static long dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) 
+{
+    switch (cmd) {
+        case IOCTL_PRINT_MESSAGE:
+            printk(KERN_INFO "my_device: ioctl command received\n");
+            break;
+        default:
+            printk(KERN_WARNING "my_device: Unknown ioctl command\n");
+            return -ENOTTY;  // Command not supported
+    }
     return 0;
 }
 
@@ -37,6 +55,7 @@ static struct file_operations fops = {
     .open = dev_open,
     .read = dev_read,
     .release = dev_release,
+    .unlocked_ioctl = dev_ioctl,
 };
 
 
